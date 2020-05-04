@@ -1,4 +1,4 @@
-package com.kafka.edu.demo;
+package com.github.bm25.kafka.basics.demo;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -11,9 +11,10 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Properties;
 
-public class ConsumerDemo {
+public class ConsumerGroupsDemo {
     private static final String BOOTSTRAP_SERVERS = "127.0.0.1:9092";
-    private static final String GROUP_ID = "my-fourth-application";
+    private static final String GROUP_ID = "my-fifth-application";//new group id lead to reading all the messages from the topic very beginning
+    private static final String TOPIC = "first-topic";
 
     public static void main(String[] args) {
         Logger logger = LoggerFactory.getLogger(ConsumerDemo.class);
@@ -29,7 +30,7 @@ public class ConsumerDemo {
         KafkaConsumer<String, String> consumer = new KafkaConsumer<String, String>(properties);
 
         //subscribe consumer to our topic(s)
-        consumer.subscribe(Arrays.asList("first-topic"));
+        consumer.subscribe(Arrays.asList(TOPIC));
 
         //poll for new data
         while(true) {

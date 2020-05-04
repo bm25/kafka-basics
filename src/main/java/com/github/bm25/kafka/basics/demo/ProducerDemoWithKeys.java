@@ -1,4 +1,4 @@
-package com.kafka.edu.demo;
+package com.github.bm25.kafka.basics.demo;
 
 import org.apache.kafka.clients.producer.*;
 import org.apache.kafka.common.serialization.StringSerializer;

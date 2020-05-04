@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.kafka.edu</groupId>
+    <groupId>com.github.bm25</groupId>
     <artifactId>kafka-basics</artifactId>
     <version>1.0-SNAPSHOT</version>
 
@@ -44,6 +44,13 @@
             <artifactId>lombok</artifactId>
             <version>1.18.10</version>
             <scope>provided</scope>
+        </dependency>
+
+        <!-- twitter dependency -->
+        <dependency>
+            <groupId>com.twitter</groupId>
+            <artifactId>hbc-core</artifactId> <!-- or hbc-twitter4j -->
+            <version>2.1.0</version> <!-- or whatever the latest version is -->
         </dependency>
     </dependencies>
 
