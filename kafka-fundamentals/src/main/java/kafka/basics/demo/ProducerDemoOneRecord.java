@@ -1,4 +1,4 @@
-package com.github.bm25.kafka.basics.demo;
+package kafka.basics.demo;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -8,7 +8,7 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import java.util.Properties;
 
 public class ProducerDemoOneRecord {
-    public static final String BOOTSTRAP_SERVERS = "127.0.0.1:9092";
+    private static final String BOOTSTRAP_SERVERS = "127.0.0.1:9092";
 
     public static void main(String[] args) {
         Properties properties = new Properties();
