@@ -113,11 +113,11 @@ public class TwitterProducer {
         Authentication hosebirdAuth = new OAuth1(CONSUMER_KEY, CONSUMER_SECRET, ACCESS_TOKEN, ACCESS_TOKEN_SECRET);
 
         ClientBuilder builder = new ClientBuilder()
-                .name("Hosebird-Client-01")                              // optional: mainly for the logs
+                .name("Hosebird-Client-01") // optional: mainly for the logs
                 .hosts(hosebirdHosts)
                 .authentication(hosebirdAuth)
                 .endpoint(hosebirdEndpoint)
-                .processor(new StringDelimitedProcessor(msgQueue));                          // optional: use this if you want to process client events
+                .processor(new StringDelimitedProcessor(msgQueue)); // optional: use this if you want to process client events
 
         return builder.build();
     }

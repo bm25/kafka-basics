@@ -12,6 +12,8 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -71,7 +73,7 @@ public class ElasticSearchConsumerDemo {
         properties.setProperty(ConsumerConfig.GROUP_ID_CONFIG, groupId);
         properties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         properties.setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");//disable auto commit of offsets
-        properties.setProperty(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "10");//max count of records to be polled by consumer from Kafka
+        properties.setProperty(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "100");//max count of records to be polled by consumer from Kafka
 
         //create consumer
         KafkaConsumer<String, String> consumer = new KafkaConsumer<String, String>(properties);
@@ -87,42 +89,37 @@ public class ElasticSearchConsumerDemo {
         while(true) {
             ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));//new in Kafka 2.0.0
             logger.info("Consumer received " + records.count() + " records from Kafka-cluster");
+            BulkRequest bulkRequest = new BulkRequest();
 
-            for (ConsumerRecord<String, String> record : records) {
-                //2 strategies
-                //1. Kafka generic Id
-                //String id = record.topic() + "_" + record.partition() + "_" + record.offset();
+            if (records.count() > 0) {
+                records.forEach(record -> {
+                    try {
+                        //Twitter feed specific id
+                        String id = extractIdFromTweet(record.value());
+                        IndexRequest indexRequest = new IndexRequest(
+                                "twitter"//Do not forget to create respective "twitter" index in ElasticSearch
+                                , "_doc"//"tweets" type has been replaced with "_doc"
+                                // Types are deprecated since Elastic 7.0: see https://www.elastic.co/guide/en/elasticsearch/reference/7.x/removal-of-types.html
+                                , id //this is to make our consumer idempotent
+                        ).source(record.value(), XContentType.JSON);
 
-                //2. Twitter feed specific id
-                String id = extractIdFromTweet(record.value());
+                        bulkRequest.add(indexRequest);
+                    }
+                    catch(NullPointerException ex) {
+                        logger.warn("Skipping bad data: " + record.value());
+                    }
+                });
 
-
-                IndexRequest indexRequest = new IndexRequest(
-                        "twitter"//Do not forget to create respective "twitter" index in ElasticSearch
-                        ,"_doc"//"tweets" type has been replaced with "_doc"
-                        // Types are deprecated since Elastic 7.0: see https://www.elastic.co/guide/en/elasticsearch/reference/7.x/removal-of-types.html
-                        ,id //this is to make our consumer idempotent
-                ).source(record.value(), XContentType.JSON);
-
-                IndexResponse indexResponse = elasticClient.index(indexRequest, RequestOptions.DEFAULT);
-                logger.info("record " + indexResponse.getId() + " has been added to ElasticSearch");
-
+                BulkResponse bulkResponse = elasticClient.bulk(bulkRequest, RequestOptions.DEFAULT);
+                logger.info("bulk response: " + bulkResponse.status());
+                logger.info("Committing offsets...");
+                consumer.commitAsync();
+                logger.info("Offsets have been committed");
                 try {
-                    Thread.sleep(10);
-                }
-                catch(InterruptedException ex) {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ex) {
                     ex.printStackTrace();
                 }
-            }
-
-            logger.info("Committing offsets...");
-            consumer.commitAsync();
-            logger.info("Offsets have been committed");
-            try {
-                Thread.sleep(1000);
-            }
-            catch(InterruptedException ex) {
-                ex.printStackTrace();
             }
         }
     }
@@ -137,7 +134,10 @@ public class ElasticSearchConsumerDemo {
     }
 
     public static void main(String[] args) throws IOException {
-
+        /*
+        To replay all messages from the very beginning run the following command:
+         > kafka-consumer-groups.sh --bootstrap-server 127.0.0.1:9092 --group kafka-demo-elasticsearch --topic twitter-tweets --reset-offsets --execute --to-earliest
+        */
         ElasticSearchConsumerDemo demo = new ElasticSearchConsumerDemo();
         RestHighLevelClient elasticClient = demo.createElasticClient();
         KafkaConsumer<String, String> consumer = demo.createConsumer("twitter-tweets");
